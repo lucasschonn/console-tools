@@ -42,8 +42,10 @@ function propriedadesAdicionais() {
     let dica = "Digite a expressão que deseja procurar para uma busca do tipo LIKE. \n\n" +
         "Digite [exp1]?ext?[exp2] para extrair o texto entre duas expressões. \n\n";
 
-
-    document.getElementById('include').setAttribute('title', dica);
+    let include = document.getElementById('include');
+    
+    include.setAttribute('title', dica);
+    include.focus();
 }
 
 function renderizarVersoes() {
@@ -151,8 +153,8 @@ function trocarVariavel(me) {
 
 var textarea = document.getElementById('textarea');
 
-function carregarVisualizacao(visualizacao) {
-    var container = document.getElementById("container");
+function carregarVisualizacao() {
+    let container = document.getElementById("container");
     container.setAttribute("class", sessao.visualizacaoCompleta ? "completo" : "");
 }
 
@@ -165,32 +167,38 @@ function extrairTexto(comando) {
         carregarVersoes();
     }
 
-    var textoExtraido = '';
-    var linhas = textarea.value.split('\n');
-    var include = document.getElementById('include');
-    var numeroDaLinha = 0;
+    let textoExtraido = '';
+    let linhas = textarea.value.split('\n');
+    let search = document.getElementById('include');
+    let numeroLinha = 0;
 
-    for (var i = 0; i < linhas.length; i++) {
-        var linha = linhas[i];
-        numeroDaLinha++;
+    for (const linha of linhas) {
+        numeroLinha++;
 
+        // captura texto de linhas sobre os parametros da caixa de pesquisa
         if (comando == EXTRAIR) {
-            if (include.value.includes('?ext?')) {
-                let parts = include.value.split('?ext?');
-                var startIndex = linha.indexOf(parts[0]);
-                var endIndex = linha.lastIndexOf(parts[1]);
 
-                if (startIndex !== -1 && endIndex !== -1 && startIndex !== endIndex) {
-                    var textoEntreDelimitadores = linha.substring(startIndex + parts[0].length, endIndex);
-                    textoExtraido += textoEntreDelimitadores + '\n';
+            // se a pesquisa inclui o padrão '?ext?' extraímos o texto entre os marcadores
+            if (search.value.includes('?ext?')) {
+                let partes = search.value.split('?ext?');
+                let indice = linha.indexOf(partes[0]);
+                let indiceFinal = linha.lastIndexOf(partes[1]);
+
+                if (indice !== -1 && indiceFinal !== -1 && indice !== indiceFinal) {
+                    let textoEntreIndices = linha.substring(indice + partes[0].length, indiceFinal);
+                    textoExtraido += textoEntreIndices + '\n';
                 }
 
             } else {
-                if (linha.includes(include.value)) {
+
+                // se o termo existe na linha guarda a linha inteira
+                if (linha.includes(search.value)) {
+
+                    // se habilitado para informar a linha a grava (carece de melhorias)
                     if (sessao.exibirLinha) {
-                        textoExtraido += numeroDaLinha + ": " + linha.trim() + "\n";
+                        textoExtraido += numeroLinha + ": " + linha + "\n";
                     } else {
-                        textoExtraido += linha.trim() + "\n";
+                        textoExtraido += linha + "\n";
                     }
                 }
             }
@@ -198,16 +206,17 @@ function extrairTexto(comando) {
             continue;
         }
 
+        // limpa o prefixo da console do eclipse gerados pelo wildfly (carece de melhora na lógica)
         if (comando == LIMPAR) {
-            var startIndex = linha.indexOf(")");
+            let indice = linha.indexOf(")");
 
             if (linha == '') {
                 continue;
             }
 
-            if (startIndex > 0) {
-                var textoEntreDelimitadores = linha.substring(startIndex + 2);
-                textoExtraido += textoEntreDelimitadores + '\n';
+            if (indice > 0) {
+                let posPrefixo = linha.substring(indice + 2);
+                textoExtraido += posPrefixo + '\n';
             } else {
                 textoExtraido += linha + '\n';
             }
@@ -215,13 +224,15 @@ function extrairTexto(comando) {
             continue;
         }
 
+        // executa o trim sobre todas as linhas
         if (comando == TRIM) {
             textoExtraido += linha.trim() + '\n';
             continue
         }
 
+        // remove o regex informado na captura de linhas
         if (comando == REMOVEREGEX) {
-            textoExtraido += linha.replaceAll(include.value, '') + '\n';
+            textoExtraido += linha.replaceAll(search.value, '') + '\n';
             continue;
         }
     }
@@ -231,17 +242,6 @@ function extrairTexto(comando) {
 
 function limpar() {
     textarea.value = '';
-}
-
-function updateLineNumbers() {
-    var lines = textarea.value.split('\n');
-    var lineNumbersHtml = '';
-
-    for (var i = 0; i < lines.length; i++) {
-        lineNumbersHtml += (i + 1) + '<br>';
-    }
-
-    lineNumbers.innerHTML = lineNumbersHtml;
 }
 
 // ferramentas --------------------------------------------------------------------------------
@@ -281,3 +281,12 @@ function contarLinhas() {
 
     textarea.value = textarea.value + "\n\n" + linhas.length + " linhas contadas\n\n";
 }
+
+function keyPress(e) {
+    
+    if (e.code == 'Enter' && e.ctrlKey) {
+        extrairTexto('EXTRAIR');
+    }
+}
+
+addEventListener('keypress', e => { keyPress(e) })
