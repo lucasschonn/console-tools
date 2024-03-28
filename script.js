@@ -1,9 +1,14 @@
 // constantes globais -------------------------------------------------------------------------
 
-const LIMPAR = "LIMPAR";
 const TRIM = "TRIM";
 const EXTRAIR = "EXTRAIR";
 const REMOVEREGEX = "REMOVEREGEX";
+const REMOVEDUPL = "REMOVEDUPL";
+const REMOVERLINHA = "REMOVERLINHA";
+
+const REGEX_EXTRAIR_ENTRE = "?entre?";
+const REGEX_EXTRAIR_APOS = "?apos?";
+const REGEX_SE_CONTEM_DEVE_CONTER = "?scdc?";
 
 // loader de sessão ---------------------------------------------------------------------------
 
@@ -39,8 +44,20 @@ function save() {
 
 propriedadesAdicionais();
 function propriedadesAdicionais() {
-    let dica = "Digite a expressão que deseja procurar para uma busca do tipo LIKE. \n\n" +
-        "Digite [exp1]?ext?[exp2] para extrair o texto entre duas expressões. \n\n";
+    let dica = 
+        `
+SE CONTÉM:    
+Digite [arg0] para extrair todas as linhas contendo este argumento.
+
+SE CONTÉM DEVE CONTER:
+Digite [arg0]${REGEX_SE_CONTEM_DEVE_CONTER}[arg1] para extrair a linha inteira ou se ela contem os dois argumentos.
+
+EXTRAIR TEXTO ENTRE:
+Digite [arg0]${REGEX_EXTRAIR_ENTRE}[arg1] para extrair o texto entre dois argumentos.
+
+EXTRAIR TEXTO APÓS:
+Digite [arg0]${REGEX_EXTRAIR_APOS} para extrair o texto após este argumento.
+`;
 
     let include = document.getElementById('include');
     
@@ -162,9 +179,14 @@ function carregarVisualizacao() {
 
 function extrairTexto(comando) {
     if (sessao.armazenarHistorico) {
-        sessao.historico.push({ hora: formatarData(new Date()), texto: textarea.value });
-        save();
-        carregarVersoes();
+        try {
+            sessao.historico.push({ hora: formatarData(new Date()), texto: textarea.value });
+            save();
+            carregarVersoes();
+        } catch (e) {
+            debugger
+            console.log(e);
+        }
     }
 
     let textoExtraido = '';
@@ -172,21 +194,54 @@ function extrairTexto(comando) {
     let search = document.getElementById('include');
     let numeroLinha = 0;
 
+    let pilha = [];
+
     for (const linha of linhas) {
         numeroLinha++;
 
         // captura texto de linhas sobre os parametros da caixa de pesquisa
         if (comando == EXTRAIR) {
 
-            // se a pesquisa inclui o padrão '?ext?' extraímos o texto entre os marcadores
-            if (search.value.includes('?ext?')) {
-                let partes = search.value.split('?ext?');
+            /**
+             * Filtra a linha se tem um argumento, tem que ter obrigatóriamente o próximo. 
+             * Caso contrário a linha inteira é extraída.Útil para limpar logs do Java removendo 
+             * os stacks que não correspondem os packages do projeto.
+             * 
+             * Exemplo: "at?SCDC?com.google"
+             * Irá remover todos os outros stacks como "at com.jboss", "at org.quartz", etc;
+             * 
+             */
+            if (search.value.includes(REGEX_SE_CONTEM_DEVE_CONTER)) {
+                let args = search.value.split(REGEX_SE_CONTEM_DEVE_CONTER);
+                let seContem = args[0];
+                let deveConter = args[1];
+
+                if (linha.includes(seContem)) {
+                    if (linha.includes(deveConter)) {
+                        textoExtraido += linha + '\n';
+                    }
+                } else {
+                    textoExtraido += linha + '\n';
+                }
+
+            } else if (search.value.includes(REGEX_EXTRAIR_ENTRE)) {
+                let partes = search.value.split(REGEX_EXTRAIR_ENTRE);
                 let indice = linha.indexOf(partes[0]);
                 let indiceFinal = linha.lastIndexOf(partes[1]);
-
+                
                 if (indice !== -1 && indiceFinal !== -1 && indice !== indiceFinal) {
                     let textoEntreIndices = linha.substring(indice + partes[0].length, indiceFinal);
                     textoExtraido += textoEntreIndices + '\n';
+                }
+                
+            // se a pesquisa inclui o padrão 'REGEX_FORW' extraímos o texto entre os marcadores
+            } else if (search.value.includes(REGEX_EXTRAIR_APOS)){
+                let partes = search.value.split(REGEX_EXTRAIR_APOS);
+                let indice = linha.indexOf(partes[0]);
+
+                if (indice >= 0) {
+                    let textoAposIndice = linha.substring(indice + partes[0].length);
+                    textoExtraido += textoAposIndice + '\n';
                 }
 
             } else {
@@ -206,18 +261,15 @@ function extrairTexto(comando) {
             continue;
         }
 
-        // limpa o prefixo da console do eclipse gerados pelo wildfly (carece de melhora na lógica)
-        if (comando == LIMPAR) {
-            let indice = linha.indexOf(")");
-
-            if (linha == '') {
-                continue;
+        if (comando == REMOVERLINHA) {
+            if (!linha.includes(search.value)) {
+                textoExtraido += linha + '\n';
             }
+        }
 
-            if (indice > 0) {
-                let posPrefixo = linha.substring(indice + 2);
-                textoExtraido += posPrefixo + '\n';
-            } else {
+        if (comando == REMOVEDUPL) {
+            if (pilha.indexOf(linha.trim()) < 0 && linha.trim() != '') {
+                pilha.push(linha.trim());
                 textoExtraido += linha + '\n';
             }
 
