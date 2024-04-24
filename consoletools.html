@@ -11,7 +11,9 @@
     <div id="container">
         <div class="regex">
             <br />
-            <input id="include" value="" placeholder="// extrair linhas (?)" />
+            <select id="select"></select>
+            <input id="include" value="" placeholder="" />
+            <button onclick="extrair()" title="Executar (CTRL + ENTER)">&#9654;</button>
         </div>
         <div class="codigo">
             <textarea id="textarea" rows="1" cols="200" spellcheck="false"></textarea>
@@ -19,13 +21,8 @@
         <br>
         <div class="row">
             <div class="ferramentas">
-                <button onclick="extrairTexto('EXTRAIR')">// extrair</button>
                 <button onclick="somarNumeros()">// somar numeros</button>
                 <button onclick="contarLinhas()">// contar linhas</button>
-                <button onclick="extrairTexto('TRIM')">// rodar trim</button>
-                <button onclick="extrairTexto('REMOVEREGEX')">// remover regex</button>
-                <button onclick="extrairTexto('REMOVEDUPL')">// remover duplicadas</button>
-                <button onclick="extrairTexto('REMOVERLINHA')">// remover linha</button>
                 <button onclick="limpar()">// limpar tudo</button>
                 <div class="configuracoes">
                     <label> // configurações: </label>
@@ -45,8 +42,9 @@
         </div>
     </div>
 
-    <span class="version">Console Tools v1.1</span>
+    <span class="version">Console Tools v1.2</span>
 </body>
+
 </html>
 
 <script src="script.js"></script>
