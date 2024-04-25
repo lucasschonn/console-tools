@@ -12,20 +12,18 @@
         <div class="regex">
             <br />
             <select id="select"></select>
-            <input id="include" value="" placeholder="" />
+            <input id="include" value="" placeholder="" tabindex="1" />
             <button onclick="extrair()" title="Executar (CTRL + ENTER)">&#9654;</button>
         </div>
         <div class="codigo">
-            <textarea id="textarea" rows="1" cols="200" spellcheck="false"></textarea>
+            <textarea id="textarea" rows="1" cols="200" spellcheck="false" tabindex="2"></textarea>
         </div>
         <br>
         <div class="row">
             <div class="ferramentas">
-                <button onclick="somarNumeros()">// somar numeros</button>
-                <button onclick="contarLinhas()">// contar linhas</button>
-                <button onclick="limpar()">// limpar tudo</button>
+                <button onclick="limpar()">Limpar entrada</button>
                 <div class="configuracoes">
-                    <label> // configurações: </label>
+                    <label> Configurações: </label>
                     <br>
                     <button onclick="trocarVariavel(this)" id="exibirLinha" class="false">
                         exibir_linha = false</button>
@@ -37,7 +35,7 @@
                 </div>
             </div>
             <div class="historico">
-                <button id="limparVersoes" onclick="limparVersoes()"> // limpar histórico</button>
+                <button id="limparVersoes" onclick="limparVersoes()"> Limpar histórico</button>
             </div>
         </div>
     </div>

@@ -1,19 +1,35 @@
-// constantes globais -------------------------------------------------------------------------
+/**
+ * Console Tools é uma suíte de automação para extração de informações de logs.
+ * 
+ * @author José Almeida
+ * @since 2023
+ */
+
+// CONSTANTES GLOBAIS
 
 const LINE_BREAK = '\n';
+const COMM_PREFIX = '&?';
 
 const COMANDOS = {
     REGEX_BATCH: '&>.',
     REGEX_AND: '&+.',
-    REGEX_EXTRAIR_LINHA: '?extlinha?',
-    REGEX_EXTRAIR_ENTRE: '?extentre?',
-    REGEX_EXTRAIR_APOS: '?extapos?',
-    REGEX_SE_CONTEM_DEVE_CONTER: '?scdc?',
-    REGEX_DIFERENCA_LINHAS: '?diff?',
-    REGEX_REMOVER_LINHA: '?remlinha?',
-    REGEX_REMOVER_DUPLICADO: '?remduplicado?',
-    REGEX_REMOVER_ARGUMENTO: '?remarg?',
-    REGEX_TRIM: '?trim?',
+    REGEX_EXTRAIR_LINHA: '&?extlinha?',
+    REGEX_EXTRAIR_ENTRE: '&?extentre?',
+    REGEX_EXTRAIR_APOS: '&?extapos?',
+    REGEX_SE_CONTEM_DEVE_CONTER: '&?scdc?',
+    REGEX_DIFERENCA_LINHAS: '&?diff?',
+    REGEX_REMOVER_LINHA: '&?remlinha?',
+    REGEX_REMOVER_DUPLICADO: '&?remduplicado?',
+    REGEX_REMOVER_ARGUMENTO: '&?remarg?',
+    REGEX_TRIM: '&?trim?',
+    REGEX_REPLACE: '&?replace?',
+    REGEX_EVAL: '&?eval?',
+    REGEX_MEDIA: '&?avarage?',
+    REGEX_PREFIXO: '&?prefix?',
+    REGEX_SUFIXO: '&?sufix?',
+    REGEX_SOMA: '&?sum?',
+    REGEX_CONTAR_LINHAS: '&?count?',
+
 }
 
 const DESCRICAO = {
@@ -28,23 +44,32 @@ const DESCRICAO = {
     REGEX_REMOVER_DUPLICADO: 'remover as linhas duplicadas',
     REGEX_REMOVER_ARGUMENTO: 'remover os argumentos das linhas',
     REGEX_TRIM: 'realizar o trim sobre as linhas',
+    REGEX_REPLACE: 'substituir um argumento pelo segundo',
+    REGEX_EVAL: 'executar o comando eval sobre a linha (use com cautela)',
+    REGEX_MEDIA: 'calcular a média dos valores das linhas',
+    REGEX_PREFIXO: 'adicionar um prefixo na linha',
+    REGEX_SUFIXO: 'adicionar um sufixo na linha',
+    REGEX_SOMA: 'somar todas as linhas',
+    REGEX_CONTAR_LINHAS: 'contar quantas linhas existem',
 }
 
 const AUTOCOMPLETE = {
     'Extrair linhas contendo': '',
-    'Executar trim': '?trim?',
-    'Remover argumentos das linhas': '?remarg?',
-    'Remover linhas duplicadas': '?remduplicado?',
-    'Remover linhas contendo argumentos': '?remlinha?',
-    'Apenas pacotes da Consisa': '?scdc?at &+.com.consisa',
-    'Execução JOB#1': '?remlinha?Enviando backup&+.Backup enviado&>.?extlinha?JOB#1&>.?diff?',
-    'Execução JOB#2': '?remlinha?Enviando backup&+.Backup enviado&>.?extlinha?JOB#2&>.?diff?',
-    'Execução JOB#3': '?remlinha?Enviando backup&+.Backup enviado&>.?extlinha?JOB#3&>.?diff?',
-    'Execução JOB#4': '?remlinha?Enviando backup&+.Backup enviado&>.?extlinha?JOB#4&>.?diff?',
-    'Execução JOB#5': '?remlinha?Enviando backup&+.Backup enviado&>.?extlinha?JOB#5&>.?diff?',
+    'Executar trim': '&?trim?',
+    'Remover argumentos das linhas': '&?remarg?',
+    'Remover linhas duplicadas': '&?remduplicado?',
+    'Remover linhas contendo argumentos': '&?remlinha?',
+    'Apenas pacotes da Consisa': '&?scdc?at &+.com.consisa',
+    'Execução JOB#1': '&?remlinha?Enviando backup&+.Backup enviado&>.&?extlinha?JOB#1&>.&?diff?',
+    'Execução JOB#2': '&?remlinha?Enviando backup&+.Backup enviado&>.&?extlinha?JOB#2&>.&?diff?',
+    'Execução JOB#3': '&?remlinha?Enviando backup&+.Backup enviado&>.&?extlinha?JOB#3&>.&?diff?',
+    'Execução JOB#4': '&?remlinha?Enviando backup&+.Backup enviado&>.&?extlinha?JOB#4&>.&?diff?',
+    'Execução JOB#5': '&?remlinha?Enviando backup&+.Backup enviado&>.&?extlinha?JOB#5&>.&?diff?',
+    'Execução restauração': '&?remlinha?restaurado&>.&?diff?',
+    'Média de tempo de restauração': '&?remlinha?restaurado&>.&?diff?&>.&?extentre?[&+.]&>.&?remlinha?/home&>.&?remarg? seg&>.&?replace?min&+. * 60 +&>.&?eval?&>.&?avarage?&>.&?prefix?Math.round(&>.&?sufix?)&>.&?eval?&>.&?prefix?Média de &>.&?sufix? segundos de execução por schema',
 }
 
-// loader de sessão ---------------------------------------------------------------------------
+// LOADER DE SESSÃO
 
 var sessao;
 load();
@@ -75,7 +100,7 @@ function save() {
     localStorage.setItem('sessao_extrator', JSON.stringify(sessao));
 }
 
-// renderização de componentes ----------------------------------------------------------------
+// RENDERIZAÇÃO DE COMPONENTES
 
 propriedadesAdicionais();
 function propriedadesAdicionais() {
@@ -84,7 +109,7 @@ function propriedadesAdicionais() {
     for (const [key, regex] of Object.entries(COMANDOS)) {
         let descricao = DESCRICAO[key];
         if (descricao) {
-            dica += `Use ${regex} para ${descricao};\n`;
+            dica += `${regex}\t\t para ${descricao};\n`;
         }
     }
 
@@ -175,9 +200,10 @@ function renderizarAutoComplete() {
     })
 }
 
-// ações de botões ----------------------------------------------------------------------------
+// AÇÕES DE BOTÕES
 
 var textarea = document.getElementById('textarea');
+var include = document.getElementById('include');
 var numeroLinha = 0;
 var textoExtraido = '';
 
@@ -264,7 +290,9 @@ function extrairAcao(pesquisa) {
         }
     }
 
-    return [COMANDOS.REGEX_EXTRAIR_LINHA, pesquisa];
+    if (!pesquisa.includes(COMM_PREFIX)) {
+        return [COMANDOS.REGEX_EXTRAIR_LINHA, pesquisa];
+    }
 }
 
 function extrairLinha(linha) {
@@ -275,7 +303,7 @@ function extrairLinha(linha) {
     }
 }
 
-// ferramentas principais ---------------------------------------------------------------------
+// FERRAMENTAS
 
 function extrair() {
     let pesquisa = obterPesquisa();
@@ -394,7 +422,10 @@ function extrairTexto(comando, pesquisa) {
          * Executa o trim sobre todas as linhas.
          */
         if (comando === COMANDOS.REGEX_TRIM) {
-            extrairLinha(linha.trim() + LINE_BREAK);
+            if (linha) {
+                extrairLinha(linha.trim() + LINE_BREAK);
+            }
+
             continue;
         }
 
@@ -450,8 +481,103 @@ function extrairTexto(comando, pesquisa) {
 
             continue;
         }
+
+        if (comando === COMANDOS.REGEX_REPLACE) {
+            let linhaModificada = linha.replaceAll(args[0], args[1]);
+            extrairLinha(linhaModificada + LINE_BREAK);
+        }
+
+        /**
+         * Executa o comando eval() sobre a linha.
+         */
+        if (comando === COMANDOS.REGEX_EVAL) {
+            if (linha) {
+                try {
+                    let resultado = eval(linha);
+                    extrairLinha(resultado + LINE_BREAK);
+                } catch (e) {
+                    extrairLinha(`${linha} (falha, consulte o log). ${LINE_BREAK}`);
+                    console.warn(`Não foi possível executar o comando [${line}].`, e);
+                }
+            }
+
+            continue;
+        }
+
+        /**
+         * Calcula a média de todas as linhas. (finaliza nos totalizadores)
+         */
+        if (comando === COMANDOS.REGEX_MEDIA) {
+            if (linha) {
+                let valor = parseFloat(linha);
+
+                if (isNaN(valor)) {
+                    continue;
+                }
+
+                bufferArray.push(valor);
+                bufferObject = bufferObject ? bufferObject + valor : valor;
+            }
+
+            continue;
+        }
+
+        if (comando === COMANDOS.REGEX_MEDIA) {
+            if (linha) {
+                let valor = parseFloat(linha);
+
+                if (isNaN(valor)) {
+                    continue;
+                }
+
+                bufferArray.push(valor);
+                bufferObject = bufferObject ? bufferObject + valor : valor;
+            }
+
+            continue;
+        }
+
+        /**
+         * Adiciona um prefixo na linha.
+         */
+        if (comando === COMANDOS.REGEX_PREFIXO) {
+            if (linha) {
+                extrairLinha(args[0] + linha + LINE_BREAK);
+            }
+
+            continue;
+        }
+
+        /**
+         * Adiciona um sufixo na linha.
+         */
+        if (comando === COMANDOS.REGEX_SUFIXO) {
+            if (linha) {
+                extrairLinha(linha + args[0] + LINE_BREAK);
+            }
+
+            continue;
+        }
+
+        /**
+         * Calcula a soma de todos os valores das linhas.
+         */
+        if (comando === COMANDOS.REGEX_SOMA) {
+            if (linha) {
+                let valor = parseFloat(linha);
+
+                if (isNaN(valor)) {
+                    continue;
+                }
+
+                bufferObject = bufferObject ? bufferObject + valor : valor;
+            }
+
+            continue;
+        }
     }
 
+    totalizadores(comando, linhas, bufferArray, bufferObject);
     textarea.value = textoExtraido;
 }
 
@@ -459,26 +585,36 @@ function limpar() {
     textarea.value = '';
 }
 
-// ferramentas --------------------------------------------------------------------------------
+function totalizadores(comando, linhas, bufferArray, bufferObject) {
 
-function somarNumeros() {
-    let textarea = document.getElementById('textarea');
-    let linhas = textarea.value.trim().split('\n');
-    let soma = 0;
-
-    for (var i = 0; i < linhas.length; i++) {
-        let linha = linhas[i];
-
-        let numero = parseInt(linha);
-        if (!isNaN(numero)) {
-            soma += numero;
+    /**
+     * Finaliza o cálculo da média.
+     */
+    if (comando === COMANDOS.REGEX_MEDIA) {
+        if (bufferObject && bufferArray.length > 0) {
+            let media = bufferObject / bufferArray.length;
+            extrairLinha(media);
         }
     }
 
-    textarea.value = textarea.value + '\n\n= ' + soma + '\n\n';
+    /**
+     * Finaliza o cálculo de soma.
+     */
+    if (comando === COMANDOS.REGEX_SOMA) {
+        if (bufferObject) {
+            extrairLinha(bufferObject)
+        }
+    }
+
+    /**
+     * Finaliza a contagem de linhas.
+     */
+    if (comando === COMANDOS.REGEX_CONTAR_LINHAS) {
+        extrairLinha(linhas.length);
+    }
 }
 
-// extras -------------------------------------------------------------------------------------
+// EXTRAS
 
 function formatarData(data) {
     const dia = data.getDate().toString().padStart(2, '0');
@@ -490,17 +626,30 @@ function formatarData(data) {
     return `${dia}/${mes} ${hora}:${minutos}:${segundos}`;
 }
 
-function contarLinhas() {
-    let textarea = document.getElementById('textarea');
-    let linhas = textarea.value.trim().split('\n');
-
-    textarea.value = textarea.value + '\n\n' + linhas.length + ' linhas contadas\n\n';
-}
-
 function keyPress(e) {
     if (e.code == 'Enter' && e.ctrlKey) {
         extrair();
     }
 }
 
-addEventListener('keypress', e => { keyPress(e) })
+function keyDown(e) {
+    if (e.code == 'Tab') {
+        if (e.target == textarea) {
+            document.getElementById('include').focus();
+            e.preventDefault();
+        }
+    }
+
+    if (e.code == 'Delete' && e.altKey) {
+        if (e.target == include) {
+            include.value = '';
+        } else {
+            textarea.value = '';
+        }
+
+        e.preventDefault();
+    }
+}
+
+addEventListener('keypress', e => { keyPress(e) });
+addEventListener('keydown', e => { keyDown(e) });
