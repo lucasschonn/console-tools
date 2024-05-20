@@ -7,6 +7,7 @@
 
 // CONSTANTES GLOBAIS
 
+const C = [];
 const LINE_BREAK = '\n';
 const COMM_PREFIX = '&?';
 
@@ -16,6 +17,7 @@ const COMANDOS = {
     REGEX_EXTRAIR_LINHA: '&?extlinha?',
     REGEX_EXTRAIR_ENTRE: '&?extentre?',
     REGEX_EXTRAIR_APOS: '&?extapos?',
+    REGEX_EXTRAIR_ANTES: '&?extantes?',
     REGEX_SE_CONTEM_DEVE_CONTER: '&?scdc?',
     REGEX_DIFERENCA_LINHAS: '&?diff?',
     REGEX_REMOVER_LINHA: '&?remlinha?',
@@ -38,6 +40,7 @@ const DESCRICAO = {
     REGEX_EXTRAIR_LINHA: 'extrair uma linha contendo o argumento',
     REGEX_EXTRAIR_ENTRE: 'extrair o texto entre dois argumentos',
     REGEX_EXTRAIR_APOS: 'extrair o texto após um argumento',
+    REGEX_EXTRAIR_ANTES: 'extrair o texto antes um argumento',
     REGEX_SE_CONTEM_DEVE_CONTER: 'extrair as linhas que contenham os dois argumentos',
     REGEX_DIFERENCA_LINHAS: 'calcular a diferença de tempo entre duas linhas',
     REGEX_REMOVER_LINHA: 'remover a linha contendo algum argumento',
@@ -55,18 +58,22 @@ const DESCRICAO = {
 
 const AUTOCOMPLETE = {
     'Extrair linhas contendo': '',
-    'Executar trim': '&?trim?',
-    'Remover argumentos das linhas': '&?remarg?',
+    'Extrair texto entre argumentos': '&?extentre?',
+    'Extrair texto após argumentos': '&?extapos?',
+    'Extrair texto antes do argumento': '&?extantes?',
+    'Extrair linha se ela contem os dois argumentos': '&?scdc?',
+    'Calcular diferença de tempo entre as linhas': '&?diff?',
+    'Remover linha contendo': '&?remlinha?',
     'Remover linhas duplicadas': '&?remduplicado?',
-    'Remover linhas contendo argumentos': '&?remlinha?',
-    'Apenas pacotes da Consisa': '&?scdc?at &+.com.consisa',
-    'Execução JOB#1': '&?remlinha?Enviando backup&+.Backup enviado&>.&?extlinha?JOB#1&>.&?diff?',
-    'Execução JOB#2': '&?remlinha?Enviando backup&+.Backup enviado&>.&?extlinha?JOB#2&>.&?diff?',
-    'Execução JOB#3': '&?remlinha?Enviando backup&+.Backup enviado&>.&?extlinha?JOB#3&>.&?diff?',
-    'Execução JOB#4': '&?remlinha?Enviando backup&+.Backup enviado&>.&?extlinha?JOB#4&>.&?diff?',
-    'Execução JOB#5': '&?remlinha?Enviando backup&+.Backup enviado&>.&?extlinha?JOB#5&>.&?diff?',
-    'Execução restauração': '&?remlinha?restaurado&>.&?diff?',
-    'Média de tempo de restauração': '&?remlinha?restaurado&>.&?diff?&>.&?extentre?[&+.]&>.&?remlinha?/home&>.&?remarg? seg&>.&?replace?min&+. * 60 +&>.&?eval?&>.&?avarage?&>.&?prefix?Math.round(&>.&?sufix?)&>.&?eval?&>.&?prefix?Média de &>.&?sufix? segundos de execução por schema',
+    'Remover argumentos das linhas': '&?remarg?',
+    'Executar comando trim': '&?trim?',
+    'Executar comando replace': '&?replace?',
+    'Executar comando eval': '&?eval?',
+    'Calcular média': '&?avarage?',
+    'Calcular soma': '&?sum?',
+    'Contar quantidade de linhas': '&?count?',
+    'Adicionar prefixo na linha': '&?prefix?',
+    'Adicionar sufixo na linha': '&?sufix?',
 }
 
 // LOADER DE SESSÃO
@@ -82,7 +89,6 @@ function load() {
         create();
     }
 
-    renderizarConfiguracoes();
     renderizarVersoes();
     renderizarAutoComplete();
 }
@@ -90,7 +96,8 @@ function load() {
 function create() {
     sessao = {
         exibirLinha: false,
-        historico: []
+        historico: [],
+        autocomplete: {}
     }
 
     save();
@@ -159,6 +166,8 @@ function obterVersao(hora) {
     for (const versao of sessao.historico) {
         if (versao.hora == hora) {
             textarea.value = versao.texto;
+            fecharUltimoModal();
+            break;
         }
     }
 }
@@ -174,9 +183,6 @@ function limparVersoesHTML() {
 function renderizarConfiguracoes() {
     sessao.exibirLinha && definirVerdadeiro('exibirLinha');
     sessao.armazenarHistorico && definirVerdadeiro('armazenarHistorico');
-    sessao.visualizacaoCompleta && definirVerdadeiro('visualizacaoCompleta');
-
-    carregarVisualizacao();
 }
 
 function definirVerdadeiro(nomeElemento) {
@@ -187,7 +193,16 @@ function definirVerdadeiro(nomeElemento) {
 
 function renderizarAutoComplete() {
     let select = document.getElementById('select');
-    for (const [nome, comando] of Object.entries(AUTOCOMPLETE)) {
+    select.removeEventListener('change', this);
+    select.innerHTML = '';
+
+    let comandosAutocomplete = { ...AUTOCOMPLETE };
+
+    if (sessao.autocomplete) {
+        comandosAutocomplete = { ...AUTOCOMPLETE, ...sessao.autocomplete }
+    }
+
+    for (const [nome, comando] of Object.entries(comandosAutocomplete)) {
         let option = document.createElement('option');
         option.setAttribute('value', comando);
         option.innerText = nome;
@@ -234,17 +249,7 @@ function trocarVariavel(me) {
         sessao.armazenarHistorico = inverterBooleano(me, sessao.armazenarHistorico, 'armazenarHistorico');
     }
 
-    if (me.id == 'visualizacaoCompleta') {
-        sessao.visualizacaoCompleta = inverterBooleano(me, sessao.visualizacaoCompleta, 'visualizacaoCompleta');
-    }
-
-    carregarVisualizacao();
     save();
-}
-
-function carregarVisualizacao() {
-    let container = document.getElementById('container');
-    container.setAttribute('class', sessao.visualizacaoCompleta ? 'completo' : '');
 }
 
 function obterLinhas() {
@@ -389,15 +394,7 @@ function extrairTexto(comando, pesquisa) {
          * Remove a linha se esta tiver algum dos parâmetros da pesquisa.
          */
         if (comando === COMANDOS.REGEX_REMOVER_LINHA) {
-            let contemAlgum = false;
-            for (const arg of args) {
-                if (linha.includes(arg)) {
-                    contemAlgum = true;
-                    break;
-                }
-            }
-
-            if (!contemAlgum) {
+            if (!contemArgumento(linha, args)) {
                 extrairLinha(linha + LINE_BREAK);
             }
 
@@ -472,10 +469,24 @@ function extrairTexto(comando, pesquisa) {
         }
 
         /**
-         * Extrai a linha se o argumento existe nela.
+         * Extrai o texto antes de um argumento.
+         */
+        if (comando === COMANDOS.REGEX_EXTRAIR_ANTES) {
+            let inicio = linha.indexOf(args[0]);
+
+            if (inicio !== -1) {
+                let textoApos = linha.substring(0 + inicio);
+                extrairLinha(textoApos + LINE_BREAK);
+            }
+
+            continue;
+        }
+
+        /**
+         * Extrai a linha se algum dos argumentos existe nela.
          */
         if (comando === COMANDOS.REGEX_EXTRAIR_LINHA) {
-            if (linha.includes(args[0])) {
+            if (contemArgumento(linha, args)) {
                 extrairLinha(linha + LINE_BREAK);
             }
 
@@ -579,6 +590,7 @@ function extrairTexto(comando, pesquisa) {
 
     totalizadores(comando, linhas, bufferArray, bufferObject);
     textarea.value = textoExtraido;
+    textoExtraido = '';
 }
 
 function limpar() {
@@ -626,6 +638,14 @@ function formatarData(data) {
     return `${dia}/${mes} ${hora}:${minutos}:${segundos}`;
 }
 
+function contemArgumento(linha, args) {
+    for (const arg of args) {
+        if (linha.includes(arg)) {
+            return true;
+        }
+    }
+}
+
 function keyPress(e) {
     if (e.code == 'Enter' && e.ctrlKey) {
         extrair();
@@ -649,7 +669,192 @@ function keyDown(e) {
 
         e.preventDefault();
     }
+
+    if (e.code == 'Escape') {
+        fecharUltimoModal();
+        e.preventDefault();
+    }
 }
 
 addEventListener('keypress', e => { keyPress(e) });
 addEventListener('keydown', e => { keyDown(e) });
+
+// MODAIS
+
+function novoModal(tituloModal, innerHTML) {
+    innerHTML = innerHTML.replaceAll('data-id=', 'id=');
+
+    let body = document.body;
+    let externo = document.createElement('div');
+    let interno = document.createElement('div');
+    let fechar = document.createElement('span');
+    let titulo = document.createElement('span');
+
+    externo.classList.add('console_modal');
+    externo.classList.add('modal');
+    interno.classList.add('container');
+    fechar.classList.add('fechar');
+    titulo.classList.add('titulo');
+
+    interno.innerHTML = innerHTML;
+    fechar.innerHTML = '&#x2715;';
+    titulo.innerText = tituloModal;
+
+    fechar.addEventListener('click', (e) => {
+        fecharUltimoModal();
+    });
+
+    externo.addEventListener('dblclick', (e) => {
+        if (e.target === externo) {
+            fecharUltimoModal();
+        }
+    });
+
+    interno.append(fechar);
+    interno.append(titulo);
+    externo.append(interno);
+    body.append(externo);
+}
+
+function fecharUltimoModal() {
+    let elements = document.getElementsByClassName('console_modal');
+    elements[elements.length - 1].remove();
+}
+
+function getTemplate(nome) {
+    let templates = document.getElementById('templates');
+    let modal = templates.getElementsByClassName(nome)[0];
+    return modal.innerHTML;
+}
+
+function editorAcessoRapido() {
+    let acessoRapido = getTemplate('acesso_rapido');
+    novoModal('Editor do acesso rápido', acessoRapido);
+
+    let editor = document.getElementById('editor');
+    editor.value = JSON.stringify(sessao.autocomplete, null, 3);
+}
+
+function salvarAcessoRapido() {
+    let editor = document.getElementById('editor');
+
+    try {
+        JSON.parse(editor.value);
+    } catch (e) {
+        alert('Json inválido');
+        return;
+    }
+
+    sessao.autocomplete = JSON.parse(editor.value);
+    renderizarAutoComplete();
+    fecharUltimoModal();
+    save();
+}
+
+function historicoSalvo() {
+    let historico = getTemplate('historico');
+
+    novoModal('Histórico', historico);
+}
+
+function configuracoes() {
+    let configuracoes = getTemplate('configuracoes');
+
+    novoModal('Configurações', configuracoes);
+    renderizarConfiguracoes();
+}
+
+function construtor() {
+    let construtor = getTemplate('construtor');
+    novoModal('Construtor (alpha)', construtor);
+
+    let comandos = document.getElementById('comandos');
+
+    for (const [nome, regex] of Object.entries(COMANDOS)) {
+        let comando = document.createElement('button');
+        let input = document.getElementById('construtor-input');
+
+        input.addEventListener('dblclick', (e) => {
+            var range = document.createRange();
+            range.selectNodeContents(e.target);
+
+            var selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        });
+
+        comando.innerText = nome;
+
+        comando.addEventListener('click', (e) => {
+            let input = document.getElementById('construtor-input');
+            let comm = document.createElement('span');
+            comm.innerText = regex;
+            
+            let argumento = document.createElement('span');
+            argumento.setAttribute('contenteditable', 'true');
+            argumento.setAttribute('spellcheck', 'false');
+            
+            // TODO carregar um comando existente
+            // TODO colocar na posição do seletor
+            // TODO se tem comando tem que ter o & no final, se já tem o ai nao faz nada
+            
+            comm.classList.add('texto', 'regex');
+            argumento.classList.add('texto', 'argumento');
+
+            input.append(comm);
+            input.append(argumento);
+
+            argumento.addEventListener('keydown', (e) => {
+                let innerText = e.target.innerText;
+
+                if (e.code == 'Backspace') {
+                    if (innerText.length === 0) {
+                        let construtor = e.target.parentNode;
+                        let els = construtor.childNodes;
+                        els[indexOf(els, e.target) - 1].remove();
+                        els[indexOf(els, e.target)].remove();
+
+                        if (els[els.length - 1]) {
+                            els[els.length - 1].focus();
+                        }
+                    }
+                }
+
+                if (e.code == 'Delete') {
+                    let s =  document.getSelection();
+                    if (s.isCollapsed && s.baseOffset >= innerText.length) {
+                        let els = e.target.parentNode.childNodes;
+                        if (els[indexOf(els, e.target) + 1]) {
+                            els[indexOf(els, e.target) + 1].remove();
+                        }
+
+                        if (els[indexOf(els, e.target) + 1]) {
+                            els[indexOf(els, e.target) + 1].remove();
+                        }
+
+                        e.target.focus();
+                    }
+                }
+            });
+
+            argumento.focus();
+        });
+
+        comandos.append(comando);
+    }
+}
+
+// FUNÇÕES DO CONSTRUTOR
+
+function indexOf(array, object) {
+    let index = 0;
+    for (const item of array) {
+        if (item === object) {
+            return index;
+        }
+
+        index++;
+    }
+
+    return -1;
+}

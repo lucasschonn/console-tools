@@ -12,7 +12,7 @@
         <div class="regex">
             <br />
             <select id="select"></select>
-            <input id="include" value="" placeholder="" tabindex="1" />
+            <input id="include" value="" spellcheck="false" tabindex="1" />
             <button onclick="extrair()" title="Executar (CTRL + ENTER)">&#9654;</button>
         </div>
         <div class="codigo">
@@ -22,25 +22,45 @@
         <div class="row">
             <div class="ferramentas">
                 <button onclick="limpar()">Limpar entrada</button>
-                <div class="configuracoes">
-                    <label> Configurações: </label>
-                    <br>
-                    <button onclick="trocarVariavel(this)" id="exibirLinha" class="false">
-                        exibir_linha = false</button>
-                    <button onclick="trocarVariavel(this)" id="armazenarHistorico" class="false">
-                        armazenar_historico = false</button>
-                    <button onclick="trocarVariavel(this)" id="visualizacaoCompleta" class="false">
-                        visualizacao_completa = false
-                    </button>
-                </div>
             </div>
-            <div class="historico">
-                <button id="limparVersoes" onclick="limparVersoes()"> Limpar histórico</button>
+            <div class="config">
+                <button onclick="editorAcessoRapido()">Editor de acesso rápido</button>
+                <button onclick="historicoSalvo()">Histórico</button>
+                <button onclick="configuracoes()">Configurações</button>
+                <button onclick="construtor()">Construtor</button>
             </div>
         </div>
     </div>
 
     <span class="version">Console Tools v1.2</span>
+
+    <section id="templates" style="display: none;">
+        <div class="acesso_rapido">
+            <textarea data-id="editor" spellcheck="false" style="height: 510px;"></textarea>
+            <button onclick="salvarAcessoRapido()">Salvar</button>
+        </div>
+
+        <div class="historico">
+            <button id="limparVersoes" onclick="limparVersoes()"> Limpar histórico</button>
+        </div>
+
+        <div class="configuracoes">
+            <button onclick="trocarVariavel(this)" data-id="exibirLinha" class="false">
+                exibir_linha = false
+            </button>
+            <button onclick="trocarVariavel(this)" data-id="armazenarHistorico" class="false">
+                armazenar_historico = false
+            </button>
+        </div>
+
+        <div class="construtor">
+            <div data-id="construtor-input"></div>
+
+            <div data-id="comandos">
+
+            </div>
+        </div>
+    </section>
 </body>
 
 </html>

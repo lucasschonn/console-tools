@@ -28,41 +28,12 @@ textarea {
     resize: none;
 }
 
-.completo .codigo {
-    height: 84%;
-}
-
-.completo .codigo textarea {
-    padding-left: 15px;
-    font-size: 16px;
-}
-
-.completo .ferramentas button {
-    display: none;
-}
-
 .configuracoes {
     margin-top: 50px;
 }
 
 .configuracoes button {
     display: inline-block !important;
-}
-
-.completo .configuracoes {
-    margin-top: 0;
-}
-
-.completo .ferramentas {
-    width: 100%;
-}
-
-.completo .regex {
-    display: none;
-}
-
-.completo .historico button {
-    display: none;
 }
 
 #mudarview {
@@ -74,7 +45,7 @@ textarea {
     position: relative;
     box-sizing: border-box;
     width: 100%;
-    height: 50%;
+    height: calc(100% - 110px);
     border-radius: 3px;
 }
 
@@ -133,7 +104,7 @@ label {
     font-size: 13px;
 }
 
-.historico {
+.config {
     text-align: right;
     display: inline-block;
     width: 50%;
@@ -200,4 +171,81 @@ select {
     border: solid 1px #1d1d1d;
     padding: 4px 10px;
     color: #0577b8;
+}
+
+.modal {
+    background-color: rgba(0, 0, 0, 0.5);
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.modal .container {
+    width: 800px;
+    height: 600px;
+    background-color: #333333;
+    box-sizing: border-box;
+    position: relative;
+    padding: 40px 5px 5px;
+}
+
+.modal .container .fechar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-weight: bolder;
+    font-size: 10px;
+    padding: 7px 10px 10px;
+    cursor: pointer;
+}
+
+.modal .container .titulo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-weight: bolder;
+    font-size: 14px;
+    padding: 7px 10px 10px;
+    cursor: default;
+}
+
+#comandos button{
+    margin-right: 8px;
+}
+
+#construtor-input {
+    padding: 15px;
+    border: none;
+    background: #191919;
+    min-height: 15px;
+}
+
+#construtor-input span {
+    margin-right: 2px;
+}
+
+#construtor-input span:focus {
+    outline: none;
+}
+
+#construtor-input .texto {
+    border-radius: 3px;
+    padding: 2px 3px;
+}
+
+#construtor-input .regex {
+    color: #428fdc;
+    background-color: #033464;
+}
+
+#construtor-input .argumento {
+    color: #91d4a8;
+    background-color: #0d532a;
 }
